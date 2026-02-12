@@ -2,37 +2,38 @@
 # -----------------------
 # Stage 1: Build frontend
 # -----------------------
-FROM node:18-alpine AS frontend
+FROM node:18-bullseye AS frontend
 
 WORKDIR /app
 
-# نسخ package.json و package-lock.json فقط أولاً لتسريع الـ cache
+# نسخ package.json و package-lock.json
 COPY package*.json ./
 
-# تثبيت الحزم مع تجاهل peer dependency conflicts
+# تثبيت dependencies مع legacy peer deps
 RUN npm install --legacy-peer-deps
 
 # نسخ باقي ملفات المشروع
 COPY . .
 
-# بناء الـ assets (Vite build)
+# إعداد متغيرات البيئة اللازمة للبناء
+ENV APP_ENV=production
+ENV APP_URL=https://2sh7anli.onrender.com
+
+# Build assets
 RUN npm run build
 
 # -----------------------
 # Stage 2: PHP backend
 # -----------------------
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm
 
 WORKDIR /var/www/html
 
-# تثبيت الامتدادات المطلوبة للـ Laravel
+# تثبيت الامتدادات المطلوبة
 RUN docker-php-ext-install pdo pdo_mysql
 
-# نسخ المشروع من Stage 1
+# نسخ الملفات من Stage 1
 COPY --from=frontend /app /var/www/html
-
-# نسخ مجلد الـ build من Vite إلى public (إن لم يكن داخل /public)
-# COPY --from=frontend /app/public/build /var/www/html/public/build
 
 # إعداد الصلاحيات
 RUN chown -R www-data:www-data /var/www/html \

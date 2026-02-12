@@ -1,27 +1,43 @@
 
-# -------- Stage 1: Build Frontend --------
-FROM node:18 as nodebuilder
+# -----------------------
+# Stage 1: Build frontend
+# -----------------------
+FROM node:18-alpine AS frontend
 
 WORKDIR /app
+
+# نسخ package.json و package-lock.json فقط أولاً لتسريع الـ cache
 COPY package*.json ./
-RUN npm install
+
+# تثبيت الحزم مع تجاهل peer dependency conflicts
+RUN npm install --legacy-peer-deps
+
+# نسخ باقي ملفات المشروع
 COPY . .
+
+# بناء الـ assets (Vite build)
 RUN npm run build
 
+# -----------------------
+# Stage 2: PHP backend
+# -----------------------
+FROM php:8.2-fpm-alpine
 
-# -------- Stage 2: PHP + Nginx --------
-FROM webdevops/php-nginx:8.2
+WORKDIR /var/www/html
 
-WORKDIR /app
+# تثبيت الامتدادات المطلوبة للـ Laravel
+RUN docker-php-ext-install pdo pdo_mysql
 
-COPY . .
+# نسخ المشروع من Stage 1
+COPY --from=frontend /app /var/www/html
 
-# انسخ ملفات Vite المبنية من المرحلة الأولى
-COPY --from=nodebuilder /app/public/build ./public/build
+# نسخ مجلد الـ build من Vite إلى public (إن لم يكن داخل /public)
+# COPY --from=frontend /app/public/build /var/www/html/public/build
 
-RUN composer install --no-dev --optimize-autoloader
+# إعداد الصلاحيات
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
-RUN php artisan config:clear
-RUN php artisan cache:clear
+EXPOSE 8000
 
-CMD ["supervisord"]
+CMD ["php-fpm"]

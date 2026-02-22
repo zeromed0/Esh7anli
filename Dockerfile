@@ -2,7 +2,7 @@
 # -----------------------
 # Stage 1: Build frontend
 # -----------------------
-FROM node:18-bullseye AS frontend
+FROM node:20-bullseye AS frontend
 
 WORKDIR /app
 

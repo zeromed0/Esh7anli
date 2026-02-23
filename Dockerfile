@@ -13,7 +13,6 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 ENV NODE_ENV=production
-ENV ROLLUP_SKIP_NATIVE=true
 
 RUN npm run build
 

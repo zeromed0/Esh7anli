@@ -26,6 +26,9 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
 
+# Make Apache serve Laravel public
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+
 # Laravel optimizations
 RUN php artisan config:clear \
  && php artisan route:clear \

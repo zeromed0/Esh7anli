@@ -5,11 +5,11 @@
 FROM php:8.2-apache
 
 # System dependencies
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
+# تثبيت دعم PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev \
+  && docker-php-ext-install pdo pdo_pgsql zip \
     unzip \
     git \
-    && docker-php-ext-install pdo pdo_pgsql zip \
     && a2enmod rewrite
 
 # Set Apache DocumentRoot to Laravel public
